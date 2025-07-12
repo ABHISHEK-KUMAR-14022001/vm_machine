@@ -1,0 +1,60 @@
+version: '3.8'
+ 
+services:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - app-network
+ 
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    networks:
+      - app-network
+    environment:
+      - JENKINS_USER=admin  # Set the admin username
+      - JENKINS_PASS=admin  # Set the admin password
+ 
+  mysql:
+    image: mysql:latest
+    environment:
+      - MYSQL_ROOT_PASSWORD=admin123
+      - MYSQL_DATABASE=idp
+      - MYSQL_USER=idp_user
+      - MYSQL_PASSWORD=admin123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+ 
+  sonarqube:
+    image: sonarqube:lts-community
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_JDBC_USERNAME=admin
+      - SONAR_JDBC_PASSWORD=admin
+    networks:
+      - app-network
+ 
+volumes:
+  jenkins_home:
+  mysql_data:
+  grafana_data:
+ 
+networks:
+  app-network:

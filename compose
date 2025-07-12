@@ -1,0 +1,109 @@
+version: '3.8'
+ 
+services:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - app-network
+ 
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock  
+  networks:
+      - app-network
+    environment:
+      - JENKINS_OPTS="--argumentsRealm.passwd.admin=admin --argumentsRealm.roles.admin=admin"
+ 
+  mysql:
+    image: sailij/idp_mysql:latest6
+    container_name: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=admin123
+      - MYSQL_DATABASE=user_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+ 
+  node-app:
+    image: sailij/idp_node:8.0
+    build: .
+    env_file: .env
+    container_name: node-app
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./wait-for-it.sh:/usr/src/app/wait-for-it.sh    
+    networks:
+      - app-network
+    restart: unless-stopped
+    entrypoint: ["./wait-for-it.sh", "mysql:3306", "--", "node", "index.js"]
+ 
+  sonarqube:
+    image: sonarqube:latest
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_JDBC_URL=jdbc:postgresql://postgres:5432/sonarqube
+      - SONAR_JDBC_USERNAME=sonar
+      - SONAR_JDBC_PASSWORD=admin
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+ 
+  postgres:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=sonarqube
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+ 
+volumes:
+  jenkins_home:
+  mysql_data:
+  grafana_data:
+ 
+networks:
+  app-network:
+    driver: bridge
+
+
+
+
+ FROM node:19-alpine
+ 
+WORKDIR /usr/src/app
+ 
+COPY package*.json ./
+ 
+RUN npm install
+ 
+COPY . .
+ 
+RUN npm run build
+ 
+RUN npm install -g serve
+ 
+EXPOSE 3001
+ 
+CMD ["serve", "-s", "build", "-l", "3001"]

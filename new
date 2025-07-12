@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # MySQL database service
+  mysql:
+    image: mysql:5.7
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: admin123
+      MYSQL_DATABASE: user_db
+    ports:
+      - "3306:3306"  # Expose MySQL on port 3306
+    volumes:
+      - mysql_data:/var/lib/mysql  # Persistent storage for MySQL data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+   
+  # Node.js application service using the official Node.js image
+  node-app:
+    image: node:16  # Use the official Node.js image (you can change the version as needed)
+    container_name: node-app
+    ports:
+      - "5000:5000"  # Expose Node.js on port 5000
+    environment:
+      NODE_ENV: development
+      DB_HOST: mysql  # MySQL service hostname
+      DB_USER: root
+      DB_PASSWORD: admin123
+      DB_NAME: user_db
+    networks:
+      - app-network
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy  # Wait until MySQL is healthy before starting the Node app
+    command: >
+      sh -c "npm install mysql && 
+              echo 'const mysql = require("mysql");' > app1.js && 
+              echo 'const db = mysql.createConnection({ host: process.env.DB_HOST, user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME });' >> app1.js && 
+              echo 'db.connect(err => { if (err) { console.error("Error connecting to database: " + err.stack); return; } console.log("Connected to database"); });' >> app1.js"
+
+volumes:
+  mysql_data:  # Volume for MySQL data persistence
+
+networks:
+  app-network:  # Shared network for inter-service communication

@@ -1,0 +1,40 @@
+sudo docker run -d \
+  --name grafana \
+  -p 3001:3000 \
+  -v /home/ayushsrivastava16252/grafana.ini:/etc/grafana/grafana.ini \
+  grafana/grafana:latest
+
+
+
+[analytics]
+check_for_updates = true
+
+[grafana_net]
+url = https://grafana.net
+
+[log]
+mode = console
+
+[paths]
+data = /var/lib/grafana/
+logs = /var/log/grafana
+plugins = /var/lib/grafana/plugins
+provisioning = /etc/grafana/provisioning
+
+[server]
+domain = ''
+
+[auth.anonymous]
+enabled = true
+org_name = Main Org.
+org_role = Viewer
+
+[cors]
+enabled = true
+allow_origins = *
+allow_credentials = true
+allow_headers = Accept, Content-Type, Authorization
+
+[security]
+allow_embedding = true
+x_frame_options = SAMEORIGIN

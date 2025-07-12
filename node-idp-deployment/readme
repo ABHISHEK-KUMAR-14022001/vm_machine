@@ -1,0 +1,49 @@
+gcloud compute disks create --size=10Gi --zone=us-central1-a my-gke-disk
+
+# Verify Disk Deletion
+# gcloud compute disks list
+
+#  Delete the Persistent Disk
+#  gcloud compute disks delete pvc-5fd4249a-4b61-4f13-a567-64432c015fa7 --zone=us-central1-a
+
+
+docker build -t abhishekkumar1402/idp_nodeapp:latest .
+docker push abhishekkumar1402/idp_nodeapp:latest
+
+
+docker build -t abhishekkumar1402/idp_react:latest16 .
+docker push abhishekkumar1402/idp_react:latest16
+
+
+user_db.sql
+
+kubectl cp user_db.sql mysql-556bcc5cfd-xkhb2:/
+kubectl exec -it mysql-556bcc5cfd-xkhb2 -- /bin/bash
+mysql -u root -p 
+USE user_db; 
+SOURCE /user_db.sql;
+SHOW DATABASES;
+SHOW TABLES;
+
+
+
+kubectl apply -f mysql.yaml
+kubectl logs -f mysql-556bcc5cfd-xkhb2
+kubectl get pod
+kubectl cp user_db.sql mysql-556bcc5cfd-xkhb2:/
+kubectl exec -it mysql-556bcc5cfd-xkhb2 -- /bin/bash
+kubectl get pod
+kubectl apply -f node-app.yaml
+kubectl get pod
+kubectl logs -f node-app-69f6487558-gcltm
+kubectl port-forward service/node-app-service 5000:5000 --address=0.0.0.0 &
+curl http://172.20.3.42:5000/health
+kubectl apply -f react-app.yaml
+kubectl get pod
+kubectl port-forward service/react-app-service 3000:3000 --address=0.0.0.0 &
+curl http://172.20.3.42:3000
+
+
+
+pkill -f "kubectl port-forward"
+ps aux | grep "kubectl port-forward"
